@@ -1,9 +1,11 @@
 package com.github.netty.mqtt.broker.handler;
 
+import com.github.netty.mqtt.broker.service.AuthService;
 import com.github.netty.mqtt.broker.store.ChannelGroupStore;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -20,6 +22,9 @@ import java.nio.charset.StandardCharsets;
 @Component
 @Slf4j
 public class MqttConnectMessageHandler implements MqttMessageHandler<MqttConnectMessage> {
+
+    @Autowired
+    private AuthService authService;
 
     @Override
     public boolean match(MqttMessageType mqttMessageType) {
@@ -52,7 +57,7 @@ public class MqttConnectMessageHandler implements MqttMessageHandler<MqttConnect
         String userName = payload.userName();
         String password = new String(payload.passwordInBytes(), StandardCharsets.UTF_8);
         // 校验用户名密码
-        if (false) {
+        if (authService.check(userName, password)) {
             log.error("用户名密码不正确，{}", payload.toString());
             writeConnFailure(channel, MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD);
             channel.close();
