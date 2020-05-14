@@ -64,6 +64,8 @@ public class MqttConnectMessageHandler implements MqttMessageHandler<MqttConnect
             return;
         }
 
+
+
         MqttFixedHeader mqttFixedHeader = mqttMessage.fixedHeader();
         MqttConnectVariableHeader mqttConnectVariableHeader = mqttMessage.variableHeader();
         boolean hasPassword = mqttConnectVariableHeader.hasPassword();
