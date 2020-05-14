@@ -7,9 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * 类描述:
@@ -85,5 +87,11 @@ public class SubscribeNotWildcardCache implements ISubscribeCache {
             });
         }
         return map;
+    }
+
+    public List<SubscribeStore> all(String topic) {
+        HashOperations<String, String, String> hashOperations = redisTemplate.opsForHash();
+        Map<String, String> entries = hashOperations.entries(PREFIX + topic);
+        return entries.values().stream().map(entry -> JSONObject.parseObject(entry, SubscribeStore.class)).collect(Collectors.toList());
     }
 }
