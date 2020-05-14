@@ -1,5 +1,6 @@
-package com.github.netty.mqtt.broker.handler;
+package com.github.netty.mqtt.broker.launch;
 
+import com.github.netty.mqtt.broker.handler.MqttMessageHandler;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
