@@ -2,6 +2,9 @@ package com.github.netty.mqtt.broker.handler;
 
 import com.github.netty.mqtt.broker.service.AuthService;
 import com.github.netty.mqtt.broker.store.channel.ChannelGroupStore;
+import com.github.netty.mqtt.broker.store.channel.ChannelIdStore;
+import com.github.netty.mqtt.broker.store.session.ISessionStoreService;
+import com.github.netty.mqtt.broker.store.session.SessionStore;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +28,9 @@ public class MqttConnectMessageHandler implements MqttMessageHandler<MqttConnect
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private ISessionStoreService sessionStoreService;
 
     @Override
     public boolean match(MqttMessageType mqttMessageType) {
@@ -64,16 +70,21 @@ public class MqttConnectMessageHandler implements MqttMessageHandler<MqttConnect
             return;
         }
 
+        // 检查重连
+        if (sessionStoreService.containKey(clientId)) {
+            SessionStore sessionStore = sessionStoreService.get(clientId);
+            ChannelIdStore.get(sessionStore.getChannelId()).ifPresent(channelId -> {
+                Channel previous = ChannelGroupStore.find(channelId);
+                boolean cleanSession = sessionStore.isCleanSession();
+                if (cleanSession) {
+                    sessionStoreService.remove(clientId);
 
-
-        MqttFixedHeader mqttFixedHeader = mqttMessage.fixedHeader();
-        MqttConnectVariableHeader mqttConnectVariableHeader = mqttMessage.variableHeader();
-        boolean hasPassword = mqttConnectVariableHeader.hasPassword();
-        boolean hasUserName = mqttConnectVariableHeader.hasUserName();
-        boolean cleanSession = mqttConnectVariableHeader.isCleanSession();
-        boolean willFlag = mqttConnectVariableHeader.isWillFlag();
-        boolean willRetain = mqttConnectVariableHeader.isWillRetain();
-        int keepAliveTimeSeconds = mqttConnectVariableHeader.keepAliveTimeSeconds();
+                }
+                if (previous != null) {
+                    previous.close();
+                }
+            });
+        }
 
         MqttConnAckVariableHeader mqttConnAckVariableHeader = new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
         MqttFixedHeader mqttConnAckFixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_LEAST_ONCE, false, 0);
