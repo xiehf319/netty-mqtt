@@ -1,4 +1,4 @@
-package com.github.netty.mqtt.broker.store;
+package com.github.netty.mqtt.broker.store.session;
 
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import lombok.Data;

@@ -1,7 +1,7 @@
 package com.github.netty.mqtt.broker.handler;
 
 import com.github.netty.mqtt.broker.service.AuthService;
-import com.github.netty.mqtt.broker.store.ChannelGroupStore;
+import com.github.netty.mqtt.broker.store.channel.ChannelGroupStore;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;

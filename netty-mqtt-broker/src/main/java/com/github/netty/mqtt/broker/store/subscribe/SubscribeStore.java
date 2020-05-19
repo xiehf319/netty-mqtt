@@ -1,4 +1,4 @@
-package com.github.netty.mqtt.broker.store;
+package com.github.netty.mqtt.broker.store.subscribe;
 
 import lombok.Data;
 

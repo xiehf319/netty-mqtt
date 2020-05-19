@@ -1,4 +1,4 @@
-package com.github.netty.mqtt.broker.store;
+package com.github.netty.mqtt.broker.store.channel;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelId;
