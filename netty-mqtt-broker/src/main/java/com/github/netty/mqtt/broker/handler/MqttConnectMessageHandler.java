@@ -5,8 +5,11 @@ import com.github.netty.mqtt.broker.store.channel.ChannelGroupStore;
 import com.github.netty.mqtt.broker.store.channel.ChannelIdStore;
 import com.github.netty.mqtt.broker.store.session.ISessionStoreService;
 import com.github.netty.mqtt.broker.store.session.SessionStore;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -86,11 +89,42 @@ public class MqttConnectMessageHandler implements MqttMessageHandler<MqttConnect
             });
         }
 
-        MqttConnAckVariableHeader mqttConnAckVariableHeader = new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_ACCEPTED, false);
-        MqttFixedHeader mqttConnAckFixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_LEAST_ONCE, false, 0);
+        // 处理心跳
+        int expire = 0;
+        if (mqttMessage.variableHeader().keepAliveTimeSeconds() > 0) {
+            if (channel.pipeline().names().contains("idle")) {
+                channel.pipeline().remove("idle");
+            }
+            expire = Math.round(mqttMessage.variableHeader().keepAliveTimeSeconds() * 1.5f);
+            channel.pipeline().addFirst("idle", new IdleStateHandler(0, 0, expire));
+        }
+
+        // 处理遗嘱消息
+        boolean cleanSession = mqttMessage.variableHeader().isCleanSession();
+        SessionStore sessionStore = new SessionStore("brokerId", clientId, channel.id().asLongText(), expire, cleanSession);
+        if (mqttMessage.variableHeader().isWillFlag()) {
+            MqttPublishMessage willMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
+                    new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.valueOf(mqttMessage.variableHeader().willQos()), mqttMessage.variableHeader().isWillRetain(), 0),
+                    new MqttPublishVariableHeader(mqttMessage.payload().willTopic(), 0),
+                    Unpooled.buffer().writeBytes(mqttMessage.payload().willMessageInBytes())
+            );
+            sessionStore.setWillMessage(willMessage);
+        }
+        sessionStoreService.put(clientId, sessionStore, expire);
+
+        // 存储回话 返回客户端连接确认
+        channel.attr(AttributeKey.valueOf("clientId")).set(clientId);
+        boolean sessionPresent = sessionStoreService.containKey(clientId);
+        MqttConnAckVariableHeader mqttConnAckVariableHeader = new MqttConnAckVariableHeader(MqttConnectReturnCode.CONNECTION_ACCEPTED, sessionPresent);
+        MqttFixedHeader mqttConnAckFixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
         MqttConnAckMessage mqttConnAckMessage = new MqttConnAckMessage(mqttConnAckFixedHeader, mqttConnAckVariableHeader);
         channel.writeAndFlush(mqttConnAckMessage);
         ChannelGroupStore.add(channel);
+
+        // 如果cleanSession为false 需要重发同一clientId存储的未完成的Qos1和Qos2的DUP消息
+        if (!cleanSession) {
+
+        }
     }
 
     /**
