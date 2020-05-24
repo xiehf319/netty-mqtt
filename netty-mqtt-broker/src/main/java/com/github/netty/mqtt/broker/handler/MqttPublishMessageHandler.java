@@ -1,9 +1,11 @@
 package com.github.netty.mqtt.broker.handler;
 
-import com.github.netty.mqtt.broker.store.channel.ChannelGroupStore;
+import com.github.netty.mqtt.broker.store.retain.RetainMessageStore;
+import com.github.netty.mqtt.broker.store.retain.RetainMessageStoreService;
 import io.netty.channel.Channel;
-import io.netty.channel.group.ChannelMatchers;
 import io.netty.handler.codec.mqtt.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 
@@ -15,7 +17,11 @@ import org.springframework.stereotype.Component;
  * @date 2020/5/13 16:55
  */
 @Component
+@Slf4j
 public class MqttPublishMessageHandler implements MqttMessageHandler<MqttPublishMessage> {
+
+    @Autowired
+    private RetainMessageStoreService retainMessageStoreService;
 
     @Override
     public boolean match(MqttMessageType mqttMessageType) {
@@ -24,12 +30,63 @@ public class MqttPublishMessageHandler implements MqttMessageHandler<MqttPublish
 
     @Override
     public void handle(Channel channel, MqttPublishMessage mqttMessage) {
-        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-        MqttMessageIdVariableHeader messageIdVariableHeader = MqttMessageIdVariableHeader.from(mqttMessage.variableHeader().packetId());
-        MqttPubAckMessage mqttPubAckMessage = new MqttPubAckMessage(mqttFixedHeader, messageIdVariableHeader);
-        channel.writeAndFlush(mqttPubAckMessage);
+        String topic = mqttMessage.variableHeader().topicName();
+        MqttQoS mqttQoS = mqttMessage.fixedHeader().qosLevel();
+        // 读取消息内容
+        byte[] content = new byte[mqttMessage.payload().readableBytes()];
+        mqttMessage.payload().getBytes(mqttMessage.payload().readerIndex(), content);
 
-        ChannelGroupStore.broadcast(mqttMessage, ChannelMatchers.all());
+        if (mqttQoS == MqttQoS.AT_MOST_ONCE) {
+
+        } else if (mqttQoS == MqttQoS.AT_LEAST_ONCE) {
+
+        } else if (mqttQoS == MqttQoS.EXACTLY_ONCE) {
+
+        }
+
+        // 需要保留的消息
+        if (mqttMessage.fixedHeader().isRetain()) {
+            if (content.length == 0) {
+
+            } else {
+                RetainMessageStore retainMessageStore = new RetainMessageStore();
+                retainMessageStore.setTopic(topic);
+                retainMessageStore.setQos(mqttQoS.value());
+                retainMessageStore.setContent(content);
+                retainMessageStoreService.put(topic, retainMessageStore);
+            }
+        }
+    }
+
+    /**
+     * 发布消息PUBLISH
+     * @param topic
+     * @param qos
+     * @param content
+     * @param retain
+     * @param dup
+     */
+    private void sendPublishMessage(String topic, MqttQoS qos, byte[] content, boolean retain, boolean dup) {
+
+    }
+
+
+    private void sendPubAckMessage(Channel channel, int messageId) {
+        MqttMessage pubAckMessage = MqttMessageFactory.newMessage(
+                new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                MqttMessageIdVariableHeader.from(messageId),
+                null
+        );
+        channel.writeAndFlush(pubAckMessage);
+    }
+
+    private void sendPubRecMessage(Channel channel, int messageId) {
+        MqttMessage pubRecMessage = MqttMessageFactory.newMessage(
+                new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0),
+                MqttMessageIdVariableHeader.from(messageId),
+                null
+        );
+        channel.writeAndFlush(pubRecMessage);
     }
 
 }

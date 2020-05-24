@@ -3,6 +3,8 @@ package com.github.netty.mqtt.broker.handler;
 import com.github.netty.mqtt.broker.service.AuthService;
 import com.github.netty.mqtt.broker.store.channel.ChannelGroupStore;
 import com.github.netty.mqtt.broker.store.channel.ChannelIdStore;
+import com.github.netty.mqtt.broker.store.dup.DupPubRelMessageStore;
+import com.github.netty.mqtt.broker.store.dup.DupPublishMessageStore;
 import com.github.netty.mqtt.broker.store.dup.DupPublishMessageStoreService;
 import com.github.netty.mqtt.broker.store.dup.DupPubRelMessageStoreService;
 import com.github.netty.mqtt.broker.store.session.ISessionStoreService;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 
 /**
@@ -41,7 +44,7 @@ public class MqttConnectMessageHandler implements MqttMessageHandler<MqttConnect
     private DupPublishMessageStoreService dupPublishMessageStoreService;
 
     @Autowired
-    private DupPubRelMessageStoreService dupRelMessageStoreService;
+    private DupPubRelMessageStoreService dupPubRelMessageStoreService;
 
     @Override
     public boolean match(MqttMessageType mqttMessageType) {
@@ -131,9 +134,25 @@ public class MqttConnectMessageHandler implements MqttMessageHandler<MqttConnect
 
         // 如果cleanSession为false 需要重发同一clientId存储的未完成的Qos1和Qos2的DUP消息
         if (!cleanSession) {
+            List<DupPublishMessageStore> dupPublishMessageStores = dupPublishMessageStoreService.get(clientId);
+            List<DupPubRelMessageStore> dupPubRelMessageStores = dupPubRelMessageStoreService.get(clientId);
+            dupPublishMessageStores.forEach(dupPublishMessageStore -> {
+                MqttPublishMessage publishMessage = (MqttPublishMessage) MqttMessageFactory.newMessage(
+                        new MqttFixedHeader(MqttMessageType.PUBLISH, true, MqttQoS.valueOf(dupPublishMessageStore.getQos()), false, 0),
+                        new MqttPublishVariableHeader(dupPublishMessageStore.getTopic(), dupPublishMessageStore.getMessageId()),
+                        dupPublishMessageStore.getContent()
+                        );
+                channel.writeAndFlush(publishMessage);
+            });
 
-            dupPublishMessageStoreService.get(clientId);
-
+            dupPubRelMessageStores.forEach(dupPubRelMessageStore -> {
+                MqttMessage message = MqttMessageFactory.newMessage(
+                        new MqttFixedHeader(MqttMessageType.PUBREL, true, MqttQoS.AT_MOST_ONCE, false, 0),
+                        MqttMessageIdVariableHeader.from(dupPubRelMessageStore.getMessageId()),
+                        null
+                );
+                channel.writeAndFlush(message);
+            });
         }
     }
 
