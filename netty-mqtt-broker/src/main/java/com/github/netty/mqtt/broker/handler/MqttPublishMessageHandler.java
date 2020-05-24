@@ -2,6 +2,7 @@ package com.github.netty.mqtt.broker.handler;
 
 import com.github.netty.mqtt.broker.store.retain.RetainMessageStore;
 import com.github.netty.mqtt.broker.store.retain.RetainMessageStoreService;
+import com.github.netty.mqtt.broker.store.subscribe.ISubscribeStoreService;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,9 @@ public class MqttPublishMessageHandler implements MqttMessageHandler<MqttPublish
 
     @Autowired
     private RetainMessageStoreService retainMessageStoreService;
+
+    @Autowired
+    private ISubscribeStoreService subscribeStoreService;
 
     @Override
     public boolean match(MqttMessageType mqttMessageType) {
