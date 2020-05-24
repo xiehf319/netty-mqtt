@@ -3,6 +3,8 @@ package com.github.netty.mqtt.broker.handler;
 import com.github.netty.mqtt.broker.service.AuthService;
 import com.github.netty.mqtt.broker.store.channel.ChannelGroupStore;
 import com.github.netty.mqtt.broker.store.channel.ChannelIdStore;
+import com.github.netty.mqtt.broker.store.dup.DupPublishMessageStoreService;
+import com.github.netty.mqtt.broker.store.dup.DupPubRelMessageStoreService;
 import com.github.netty.mqtt.broker.store.session.ISessionStoreService;
 import com.github.netty.mqtt.broker.store.session.SessionStore;
 import io.netty.buffer.Unpooled;
@@ -34,6 +36,12 @@ public class MqttConnectMessageHandler implements MqttMessageHandler<MqttConnect
 
     @Autowired
     private ISessionStoreService sessionStoreService;
+
+    @Autowired
+    private DupPublishMessageStoreService dupPublishMessageStoreService;
+
+    @Autowired
+    private DupPubRelMessageStoreService dupRelMessageStoreService;
 
     @Override
     public boolean match(MqttMessageType mqttMessageType) {
@@ -123,6 +131,8 @@ public class MqttConnectMessageHandler implements MqttMessageHandler<MqttConnect
 
         // 如果cleanSession为false 需要重发同一clientId存储的未完成的Qos1和Qos2的DUP消息
         if (!cleanSession) {
+
+            dupPublishMessageStoreService.get(clientId);
 
         }
     }
