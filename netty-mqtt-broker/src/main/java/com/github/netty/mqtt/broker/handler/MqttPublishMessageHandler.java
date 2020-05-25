@@ -52,17 +52,17 @@ public class MqttPublishMessageHandler implements MqttMessageHandler<MqttPublish
         mqttMessage.payload().getBytes(mqttMessage.payload().readerIndex(), content);
 
         if (mqttQoS == MqttQoS.AT_MOST_ONCE) {
-
+            // 不做处理
         } else if (mqttQoS == MqttQoS.AT_LEAST_ONCE) {
-
+            this.sendPubAckMessage(channel, mqttMessage.variableHeader().packetId());
         } else if (mqttQoS == MqttQoS.EXACTLY_ONCE) {
-
+            this.sendPubRecMessage(channel, mqttMessage.variableHeader().packetId());
         }
 
         // 需要保留的消息
         if (mqttMessage.fixedHeader().isRetain()) {
             if (content.length == 0) {
-
+                retainMessageStoreService.remove(topic);
             } else {
                 RetainMessageStore retainMessageStore = new RetainMessageStore();
                 retainMessageStore.setTopic(topic);
@@ -71,36 +71,6 @@ public class MqttPublishMessageHandler implements MqttMessageHandler<MqttPublish
                 retainMessageStoreService.put(topic, retainMessageStore);
             }
         }
-    }
-
-    /**
-     * 发布消息PUBLISH
-     * @param topic
-     * @param qos
-     * @param content
-     * @param retain
-     * @param dup
-     */
-    private void sendPublishMessage(String topic, MqttQoS qos, byte[] content, boolean retain, boolean dup) {
-        List<SubscribeStore> subscribeStoreList = subscribeStoreService.search(topic);
-        subscribeStoreList.forEach(subscribeStore -> {
-            String clientId = subscribeStore.getClientId();
-            if (sessionStoreService.containKey(clientId)) {
-                SessionStore sessionStore = sessionStoreService.get(clientId);
-                MqttQoS mqttQos = MqttQoS.valueOf(Math.min(qos.value(), subscribeStore.getQos()));
-                if (mqttQos == MqttQoS.AT_MOST_ONCE) {
-                    MqttMessage message = MqttMessageFactory.newMessage(
-                            new MqttFixedHeader(MqttMessageType.PUBLISH, dup, mqttQos, retain, 0),
-                            new MqttPublishVariableHeader(topic, 0),
-                            Unpooled.buffer().writeBytes(content)
-                    );
-                    log.info("PUBLISH - clientId: {}  topic: {} qos: {}", clientId, topic, qos);
-                    ChannelIdStore.get("brokerId" + "_" + sessionStore.getChannelId()).ifPresent(channelId -> {
-                        ChannelGroupStore.find(channelId).writeAndFlush(message);
-                    });
-                }
-            }
-        });
     }
 
 
