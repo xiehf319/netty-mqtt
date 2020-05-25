@@ -1,10 +1,9 @@
 package com.github.netty.mqtt.broker.handler;
 
 import io.netty.channel.Channel;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.*;
+import io.netty.util.AttributeKey;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 
@@ -16,7 +15,8 @@ import org.springframework.stereotype.Component;
  * @date 2020/5/13 16:55
  */
 @Component
-public class MqttPubRelMessageHandler implements MqttMessageHandler<MqttMessage>{
+@Slf4j
+public class MqttPubRelMessageHandler implements MqttMessageHandler<MqttMessage> {
 
     @Override
     public boolean match(MqttMessageType mqttMessageType) {
@@ -25,8 +25,13 @@ public class MqttPubRelMessageHandler implements MqttMessageHandler<MqttMessage>
 
     @Override
     public void handle(Channel channel, MqttMessage mqttMessage) {
-        MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-        MqttMessage mqttPubCompMessage = new MqttMessage(mqttFixedHeader);
-        channel.writeAndFlush(mqttPubCompMessage);
+        MqttMessageIdVariableHeader mqttMessageIdVariableHeader = (MqttMessageIdVariableHeader) mqttMessage.variableHeader();
+        MqttMessage message = MqttMessageFactory.newMessage(
+                new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_LEAST_ONCE, false, 0),
+                MqttMessageIdVariableHeader.from(mqttMessageIdVariableHeader.messageId()),
+                null
+        );
+        log.info("PUBREL clientId: {} messageId: {}", channel.attr(AttributeKey.valueOf("clientId")), mqttMessageIdVariableHeader.messageId());
+        channel.writeAndFlush(message);
     }
 }
