@@ -1,4 +1,4 @@
-package com.github.netty.mqtt.broker.internal;
+package com.github.netty.mqtt.broker.dispatch;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Primary;
  * @date 2020/5/25 18:37
  */
 @Configuration
-public class BroadcastConfig {
+public class DispatchConfig {
 
     /**
      * 默认为local 或者配置为local
@@ -24,9 +24,9 @@ public class BroadcastConfig {
     @Bean
     @Primary
     @ConditionalOnProperty(prefix = "mqtt.publish.broadcast", name = "type", havingValue = "local", matchIfMissing = true)
-    public AsyncThreadBroadcast asyncThread(@Autowired BroadcastPublish broadcastPublish) {
+    public ThreadDispatcher asyncThread(@Autowired PublishDispatchExecutor broadcastPublish) {
         System.out.println("local");
-        return new AsyncThreadBroadcast(broadcastPublish);
+        return new ThreadDispatcher(broadcastPublish);
     }
 
     /**
@@ -34,11 +34,11 @@ public class BroadcastConfig {
      * @return
      */
     @Bean
-    @ConditionalOnMissingBean(AsyncThreadBroadcast.class)
+    @ConditionalOnMissingBean(ThreadDispatcher.class)
     @ConditionalOnProperty(prefix = "mqtt.publish.broadcast", name = "type", havingValue = "kafka", matchIfMissing = false)
-    public KafkaBroadcast kafkaProducer() {
+    public KafkaDispatcher kafkaProducer() {
         System.out.println("kafka");
-        return new KafkaBroadcast();
+        return new KafkaDispatcher();
     }
 
 }

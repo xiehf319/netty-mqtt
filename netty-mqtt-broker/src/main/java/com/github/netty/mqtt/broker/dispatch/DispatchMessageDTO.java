@@ -1,11 +1,10 @@
-package com.github.netty.mqtt.broker.internal;
+package com.github.netty.mqtt.broker.dispatch;
 
 import lombok.Builder;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 /**
  * 类描述:
@@ -16,7 +15,7 @@ import java.util.Arrays;
  */
 @Data
 @Builder
-public class BroadcastMessageDTO implements Serializable {
+public class DispatchMessageDTO implements Serializable {
 
     /**
      * 代理id

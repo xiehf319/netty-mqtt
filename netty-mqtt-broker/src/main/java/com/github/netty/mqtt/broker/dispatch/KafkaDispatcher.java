@@ -1,4 +1,4 @@
-package com.github.netty.mqtt.broker.internal;
+package com.github.netty.mqtt.broker.dispatch;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -10,10 +10,10 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2020/5/25 18:26
  */
 @Slf4j
-public class KafkaBroadcast implements Broadcast {
+public class KafkaDispatcher implements Dispatcher {
 
     @Override
-    public void internalSend(String channelId, BroadcastMessageDTO messageDTO) {
+    public void internalSend(String channelId, DispatchMessageDTO messageDTO) {
         log.info("广播PUBLISH，来源channelId: {} , 消息内容: {}", channelId, messageDTO.toString());
     }
 }

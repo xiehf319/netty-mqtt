@@ -1,4 +1,4 @@
-package com.github.netty.mqtt.broker.internal;
+package com.github.netty.mqtt.broker.dispatch;
 
 import com.github.netty.mqtt.broker.store.channel.ChannelGroupStore;
 import com.github.netty.mqtt.broker.store.channel.ChannelIdStore;
@@ -9,7 +9,6 @@ import com.github.netty.mqtt.broker.store.session.SessionStore;
 import com.github.netty.mqtt.broker.store.session.SessionStoreService;
 import com.github.netty.mqtt.broker.store.subscribe.ISubscribeStoreService;
 import com.github.netty.mqtt.broker.store.subscribe.SubscribeStore;
-import com.github.netty.mqtt.broker.store.subscribe.SubscribeStoreRedisService;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.*;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +26,7 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class BroadcastPublish {
+public class PublishDispatchExecutor {
 
     @Autowired
     private SessionStoreService sessionStoreService;

@@ -1,4 +1,4 @@
-package com.github.netty.mqtt.broker.internal;
+package com.github.netty.mqtt.broker.dispatch;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import org.springframework.scheduling.annotation.Async;
@@ -10,17 +10,17 @@ import org.springframework.scheduling.annotation.Async;
  * @version 1.0
  * @date 2020/5/25 18:26
  */
-public class AsyncThreadBroadcast implements Broadcast {
+public class ThreadDispatcher implements Dispatcher {
 
-    private BroadcastPublish broadcastPublish;
+    private PublishDispatchExecutor broadcastPublish;
 
-    public AsyncThreadBroadcast(BroadcastPublish broadcastPublish) {
+    public ThreadDispatcher(PublishDispatchExecutor broadcastPublish) {
         this.broadcastPublish = broadcastPublish;
     }
 
     @Override
     @Async
-    public void internalSend(String channelId, BroadcastMessageDTO messageDTO) {
+    public void internalSend(String channelId, DispatchMessageDTO messageDTO) {
         broadcastPublish.sendPublishMessage(
                 messageDTO.getTopic(),
                 MqttQoS.valueOf(messageDTO.getQos()),
