@@ -50,9 +50,9 @@ public class MqttPublishMessageHandler implements MqttMessageHandler<MqttPublish
         // 读取消息内容
         byte[] content = new byte[mqttMessage.payload().readableBytes()];
         mqttMessage.payload().getBytes(mqttMessage.payload().readerIndex(), content);
-
+        log.info("PUBLISH - topic: {}, qos: {}", topic, mqttQoS.value());
         if (mqttQoS == MqttQoS.AT_MOST_ONCE) {
-            // 不做处理
+            // 只接收，不做处理
         } else if (mqttQoS == MqttQoS.AT_LEAST_ONCE) {
             this.sendPubAckMessage(channel, mqttMessage.variableHeader().packetId());
         } else if (mqttQoS == MqttQoS.EXACTLY_ONCE) {

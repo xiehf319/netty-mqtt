@@ -20,7 +20,7 @@ public class ThreadDispatcher implements Dispatcher {
 
     @Override
     @Async
-    public void internalSend(String channelId, DispatchMessageDTO messageDTO) {
+    public void dispatch(String channelId, DispatchMessageDTO messageDTO) {
         broadcastPublish.sendPublishMessage(
                 messageDTO.getTopic(),
                 MqttQoS.valueOf(messageDTO.getQos()),

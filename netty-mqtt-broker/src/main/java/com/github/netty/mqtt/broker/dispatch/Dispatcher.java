@@ -9,5 +9,11 @@ package com.github.netty.mqtt.broker.dispatch;
  */
 public interface Dispatcher {
 
-    void internalSend(String channelId, DispatchMessageDTO messageDTO);
+    /**
+     * 发布消息
+     *
+     * @param channelId  来源客户端
+     * @param messageDTO 消息内容
+     */
+    void dispatch(String channelId, DispatchMessageDTO messageDTO);
 }

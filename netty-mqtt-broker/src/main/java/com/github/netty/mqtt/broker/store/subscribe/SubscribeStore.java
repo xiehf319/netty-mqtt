@@ -1,6 +1,8 @@
 package com.github.netty.mqtt.broker.store.subscribe;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 类描述:
@@ -10,6 +12,8 @@ import lombok.Data;
  * @date 2020/5/14 17:18
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class SubscribeStore {
 
     /**

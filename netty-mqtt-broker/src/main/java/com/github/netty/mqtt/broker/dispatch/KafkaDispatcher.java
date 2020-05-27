@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 public class KafkaDispatcher implements Dispatcher {
 
     @Override
-    public void internalSend(String channelId, DispatchMessageDTO messageDTO) {
+    public void dispatch(String channelId, DispatchMessageDTO messageDTO) {
         log.info("广播PUBLISH，来源channelId: {} , 消息内容: {}", channelId, messageDTO.toString());
     }
 }
