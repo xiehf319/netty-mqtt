@@ -1,6 +1,7 @@
 package com.github.netty.mqtt.broker.store.session;
 
 import com.alibaba.fastjson.JSONObject;
+import com.github.netty.mqtt.broker.cache.SessionStoreCache;
 import com.github.netty.mqtt.broker.util.StoreUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,45 +19,31 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class SessionStoreService implements ISessionStoreService {
 
-    private final static String SESSION_CACHE_PREFIX = "NETTY:MQTT:SESSION:";
-
     @Autowired
-    private RedisTemplate<String, String> redisTemplate;
+    private SessionStoreCache sessionStoreCache;
 
     @Override
     public void put(String clientId, SessionStore sessionStore, int expire) {
-        JSONObject jsonObject = StoreUtil.transPublishToMap(sessionStore);
-        if (jsonObject != null) {
-            if (sessionStore.getExpire() > 0) {
-                redisTemplate.opsForValue().set(SESSION_CACHE_PREFIX + clientId, jsonObject.toJSONString(), expire, TimeUnit.SECONDS);
-            } else {
-                redisTemplate.opsForValue().set(SESSION_CACHE_PREFIX + clientId, jsonObject.toJSONString());
-            }
-        }
+        sessionStoreCache.put(clientId, sessionStore, expire);
     }
 
     @Override
     public void expire(String clientId, int expire) {
-        redisTemplate.expire(SESSION_CACHE_PREFIX + clientId, expire, TimeUnit.SECONDS);
+        sessionStoreCache.expire(clientId, expire);
     }
 
     @Override
     public SessionStore get(String clientId) {
-        String value = redisTemplate.opsForValue().get(SESSION_CACHE_PREFIX + clientId);
-        if (value == null) {
-            return null;
-        }
-        JSONObject object = JSONObject.parseObject(value);
-        return StoreUtil.transMapToPublish(object);
+        return sessionStoreCache.get(clientId);
     }
 
     @Override
     public boolean containKey(String clientId) {
-        return redisTemplate.hasKey(SESSION_CACHE_PREFIX + clientId);
+        return sessionStoreCache.containKey(clientId);
     }
 
     @Override
     public void remove(String clientId) {
-        redisTemplate.opsForValue().getOperations().delete(SESSION_CACHE_PREFIX + clientId);
+        sessionStoreCache.remove(clientId);
     }
 }
