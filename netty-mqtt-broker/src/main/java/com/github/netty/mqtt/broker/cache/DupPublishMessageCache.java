@@ -33,7 +33,8 @@ public class DupPublishMessageCache {
     }
 
     public boolean containKey(String clientId) {
-        return redisTemplate.hasKey(clientId);
+        Boolean result = redisTemplate.hasKey(clientId);
+        return result == null ? false : result;
     }
 
     public ConcurrentHashMap<Integer, DupPublishMessageStore> get(String clientId) {

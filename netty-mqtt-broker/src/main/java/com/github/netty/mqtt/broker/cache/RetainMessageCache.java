@@ -41,7 +41,8 @@ public class RetainMessageCache {
     }
 
     public boolean containKey(String topic) {
-        return redisTemplate.hasKey(RETAIN_MESSAGE_PREFIX + topic);
+        Boolean result = redisTemplate.hasKey(RETAIN_MESSAGE_PREFIX + topic);
+        return result == null ? false : result;
     }
 
     public Map<String, RetainMessageStore> all() {

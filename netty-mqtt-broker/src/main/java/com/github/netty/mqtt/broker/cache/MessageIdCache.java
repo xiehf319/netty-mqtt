@@ -1,5 +1,7 @@
 package com.github.netty.mqtt.broker.cache;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -12,15 +14,20 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class MessageIdCache {
 
-    public void put(int messageId) {
+    private static final String MESSAGE_ID_CACHE_PREFIX = "netty:mqtt:message_id:";
 
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
+    public void put(int messageId) {
+        redisTemplate.opsForValue().set(MESSAGE_ID_CACHE_PREFIX + messageId, String.valueOf(messageId));
     }
 
     public void remove(int messageId) {
-
+        redisTemplate.opsForValue().getOperations().delete(MESSAGE_ID_CACHE_PREFIX + messageId);
     }
 
     public boolean containKey(int messageId) {
-        return false;
+        return redisTemplate.hasKey(MESSAGE_ID_CACHE_PREFIX + messageId);
     }
 }
