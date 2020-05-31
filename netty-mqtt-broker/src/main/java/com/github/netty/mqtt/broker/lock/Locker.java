@@ -69,7 +69,7 @@ public class Locker {
                 } else if (nativeConnection instanceof Jedis) {
                     return (Long) ((Jedis) nativeConnection).eval(script, Collections.singletonList(LOCK_PREFIX + key), args);
                 }
-                return null;
+                return 0L;
             });
             log.info("LOCK -- key: {} result: {}", key, result);
             if (SUCCESS.equals(result)) {
@@ -91,7 +91,7 @@ public class Locker {
             } else if (nativeConnection instanceof Jedis) {
                 return (Long) ((Jedis) nativeConnection).eval(script, Collections.singletonList(LOCK_PREFIX + key), args);
             }
-            return null;
+            return 0L;
         });
         log.info("RELEASE -- key: {} result: {}", key, result);
     }
