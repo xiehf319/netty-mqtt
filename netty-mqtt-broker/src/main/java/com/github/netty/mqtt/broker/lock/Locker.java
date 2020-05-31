@@ -38,14 +38,15 @@ public class Locker {
     private static final int LOCK_EXPIRE = 300;
 
     public void lock(String key, Perform perform) {
+        String value = UUID.randomUUID().toString();
         try {
-            if (lock(key, "1", LOCK_EXPIRE)) {
+            if (lock(key, value, LOCK_EXPIRE)) {
                 perform.perform();
             }
         } catch (Exception e) {
             log.error("加锁发生异常");
         } finally {
-            release(key);
+            release(key, value);
         }
     }
 
@@ -80,9 +81,9 @@ public class Locker {
         return false;
     }
 
-    private void release(String key) {
+    private void release(String key, String value) {
         String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
-        List<String> args = LettuceLists.newList();
+        List<String> args = LettuceLists.newList(value);
         Long result = redisTemplate.execute((RedisCallback<Long>) connection -> {
             Object nativeConnection = connection.getNativeConnection();
             if (nativeConnection instanceof JedisCluster) {
